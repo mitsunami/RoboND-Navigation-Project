@@ -1,22 +1,11 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
-#include "nav_msgs/Odometry.h"
-
-double odom_x=0.0, odom_y=0.0;
-
-void odom_callback(const nav_msgs::Odometry::ConstPtr& odom_msg){
-  odom_x = (*odom_msg).pose.pose.position.x;
-  odom_y = (*odom_msg).pose.pose.position.y;
-  ROS_INFO("Odometry: (x, y) = (%2.1f, %2.1f)", odom_x, odom_y);
-}
 
 int main( int argc, char** argv )
 {
   ros::init(argc, argv, "add_markers");
   ros::NodeHandle n;
   ros::Rate r(1);
-  ros::Subscriber odom_sub;
-  odom_sub = n.subscribe("/odom", 100, odom_callback);
   ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
   // Set our initial shape type to be a cube
@@ -63,28 +52,52 @@ int main( int argc, char** argv )
 
     marker.lifetime = ros::Duration();
 
-    // Initially show the marker at the pickup zone
     // Publish the marker
-    marker_pub.publish(marker);
-
-    double marker_dist = 100.0;
-    const double dist_threshold = 0.5;
-    while( marker_dist > dist_threshold ){
-      marker_dist = pow(odom_x-marker.pose.position.x, 2) + pow(odom_y-marker.pose.position.y, 2);
-      ros::Duration(1.0).sleep();
-      ROS_INFO("marker_dist: %2.1f, threshold: %2.1f", marker_dist, dist_threshold);
+    /*
+    while (marker_pub.getNumSubscribers() < 1)
+    {
+      if (!ros::ok())
+      {
+        return 0;
+      }
+      ROS_WARN_ONCE("Please create a subscriber to the marker");
+      sleep(1);
     }
-
-    // Hide the marker once your robot reaches the pickup zone
-    ROS_INFO("Reached a marker!");
-    marker.action = visualization_msgs::Marker::DELETE;
+    */
     marker_pub.publish(marker);
 
-    // Wait 5 seconds to simulate a pickup
+    // Cycle between different shapes
+    /*
+    switch (shape)
+    {
+    case visualization_msgs::Marker::CUBE:
+      shape = visualization_msgs::Marker::SPHERE;
+      break;
+    case visualization_msgs::Marker::SPHERE:
+      shape = visualization_msgs::Marker::ARROW;
+      break;
+    case visualization_msgs::Marker::ARROW:
+      shape = visualization_msgs::Marker::CYLINDER;
+      break;
+    case visualization_msgs::Marker::CYLINDER:
+      shape = visualization_msgs::Marker::CUBE;
+      break;
+    }
+    */
+    
     ROS_INFO("Pause 5 seconds.");
     ros::Duration(5.0).sleep();
 
-    // Show the marker at the drop off zone once your robot reaches it
+    ROS_INFO("Hide the marker.");
+    marker.action = visualization_msgs::Marker::DELETE;
+    marker_pub.publish(marker);
+
+    ROS_INFO("Pause 5 seconds.");
+    ros::Duration(5.0).sleep();
+    
+    // Set the marker action again.
+    ROS_INFO("Publish the marker at the drop off zone.");
+    marker.action = visualization_msgs::Marker::ADD;
     marker.pose.position.x = 4.5;
     marker.pose.position.y = -0.5;
     marker.pose.position.z = 0;
@@ -99,16 +112,6 @@ int main( int argc, char** argv )
     marker.color.g = 1.0f;
     marker.color.b = 0.0f;
     marker.color.a = 1.0;
-    double drop_dist = 100.0;
-    while( drop_dist > dist_threshold ){
-      drop_dist = pow(odom_x-marker.pose.position.x, 2) + pow(odom_y-marker.pose.position.y, 2);
-      ros::Duration(1.0).sleep();
-      ROS_INFO("drop_dist: %2.1f, threshold: %2.1f", drop_dist, dist_threshold);
-    }
-
-    // Set the marker action again.
-    ROS_INFO("Publish the marker at the drop off zone.");
-    marker.action = visualization_msgs::Marker::ADD;
     marker.lifetime = ros::Duration();
     marker_pub.publish(marker);
     
