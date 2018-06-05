@@ -5,9 +5,9 @@
 double odom_x=0.0, odom_y=0.0;
 
 void odom_callback(const nav_msgs::Odometry::ConstPtr& odom_msg){
-  odom_x = (*odom_msg).pose.pose.position.x;
-  odom_y = (*odom_msg).pose.pose.position.y;
-  ROS_INFO("Odometry: (x, y) = (%2.1f, %2.1f)", odom_x, odom_y);
+  odom_x = odom_msg->pose.pose.position.x;
+  odom_y = odom_msg->pose.pose.position.y;
+  //ROS_INFO("Odometry: (x, y) = (%2.1f, %2.1f)", odom_x, odom_y);
 }
 
 int main( int argc, char** argv )
@@ -16,7 +16,7 @@ int main( int argc, char** argv )
   ros::NodeHandle n;
   ros::Rate r(1);
   ros::Subscriber odom_sub;
-  odom_sub = n.subscribe("/odom", 100, odom_callback);
+  odom_sub = n.subscribe("odom", 1000, odom_callback);
   ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
   // Set our initial shape type to be a cube
@@ -68,9 +68,10 @@ int main( int argc, char** argv )
     marker_pub.publish(marker);
 
     double marker_dist = 100.0;
-    const double dist_threshold = 0.5;
+    const double dist_threshold = 0.1;
     while( marker_dist > dist_threshold ){
-      marker_dist = pow(odom_x-marker.pose.position.x, 2) + pow(odom_y-marker.pose.position.y, 2);
+      marker_dist = sqrt( pow(odom_x-marker.pose.position.x, 2) + pow(odom_y-marker.pose.position.y, 2) );
+      ros::spinOnce();
       ros::Duration(1.0).sleep();
       ROS_INFO("marker_dist: %2.1f, threshold: %2.1f", marker_dist, dist_threshold);
     }
@@ -85,8 +86,8 @@ int main( int argc, char** argv )
     ros::Duration(5.0).sleep();
 
     // Show the marker at the drop off zone once your robot reaches it
-    marker.pose.position.x = 4.5;
-    marker.pose.position.y = -0.5;
+    marker.pose.position.x = 4.0;
+    marker.pose.position.y = -0.1;
     marker.pose.position.z = 0;
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
@@ -101,7 +102,8 @@ int main( int argc, char** argv )
     marker.color.a = 1.0;
     double drop_dist = 100.0;
     while( drop_dist > dist_threshold ){
-      drop_dist = pow(odom_x-marker.pose.position.x, 2) + pow(odom_y-marker.pose.position.y, 2);
+      drop_dist = sqrt( pow(odom_x-marker.pose.position.x, 2) + pow(odom_y-marker.pose.position.y, 2) );
+      ros::spinOnce();
       ros::Duration(1.0).sleep();
       ROS_INFO("drop_dist: %2.1f, threshold: %2.1f", drop_dist, dist_threshold);
     }
@@ -112,8 +114,8 @@ int main( int argc, char** argv )
     marker.lifetime = ros::Duration();
     marker_pub.publish(marker);
     
-    ROS_INFO("Pause 5 seconds.");
-    ros::Duration(5.0).sleep();
+    ROS_INFO("Pause 10 seconds.");
+    ros::Duration(10.0).sleep();
 
 
     r.sleep();

@@ -42,8 +42,9 @@ int main(int argc, char** argv){
     ros::Duration(5.0).sleep();
 
     // Define a position and orientation again for the robot to reach
-    goal.target_pose.pose.position.x = 4.5;
-    goal.target_pose.pose.orientation.w = -0.5;
+    goal.target_pose.pose.position.x = 4.0;
+    goal.target_pose.pose.position.y = -0.1;
+    goal.target_pose.pose.orientation.w = 1.0;
     ROS_INFO("Sending goal");
     ac.sendGoal(goal);
     ac.waitForResult();
